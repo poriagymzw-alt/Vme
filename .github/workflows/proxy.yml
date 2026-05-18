@@ -1,0 +1,16 @@
+name: tmate Proxy (هر ۶ ساعت Run کن)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  proxy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: شروع tmate + SOCKS5 Proxy
+        uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true
+          limit-access-to-actor: true
