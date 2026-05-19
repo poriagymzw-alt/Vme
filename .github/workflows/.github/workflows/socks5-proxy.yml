@@ -1,10 +1,10 @@
-name: GitHub SOCKS5 Proxy via Cloudflare Tunnel
+name: GitHub SOCKS5 Proxy (Quick Tunnel - بدون Domain)
 
 on:
   workflow_dispatch:
     inputs:
       duration:
-        description: 'مدت زمان اجرا (مثلاً 1h یا 3h)'
+        description: 'مدت زمان اجرا (مثلاً 1h یا 2h)'
         required: true
         default: '2h'
 
@@ -15,25 +15,22 @@ jobs:
     steps:
       - name: Install cloudflared + Chisel
         run: |
-          # نصب cloudflared
           curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared.deb
 
-          # نصب Chisel (آخرین نسخه)
           wget https://github.com/jpillora/chisel/releases/download/v1.10.0/chisel_1.10.0_linux_amd64.deb
           sudo dpkg -i chisel_1.10.0_linux_amd64.deb
 
-      - name: Run Cloudflare Tunnel + SOCKS5 Proxy
-        env:
-          TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
+      - name: Run Quick Tunnel + SOCKS5 Proxy
         run: |
-          echo "🚀 شروع تونل و پروکسی..."
-
-          # اجرا همزمان تونل + Chisel
+          echo "🚀 شروع Quick Tunnel + Chisel SOCKS5..."
+          
           timeout ${{ github.event.inputs.duration }} bash -c '
-            cloudflared tunnel run --token "$TUNNEL_TOKEN" --url http://localhost:8080 &
+            # Quick Tunnel (بدون نیاز به token و domain)
+            cloudflared tunnel --url http://localhost:8080 &
             TUNNEL_PID=$!
-            sleep 10
+            sleep 8
+            # Chisel SOCKS5 Server
             chisel server --socks5 --port 8080 &
             CHISEL_PID=$!
             wait $TUNNEL_PID $CHISEL_PID
