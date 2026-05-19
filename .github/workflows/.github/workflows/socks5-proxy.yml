@@ -26,11 +26,9 @@ jobs:
           echo "🚀 شروع Quick Tunnel + Chisel SOCKS5..."
           
           timeout ${{ github.event.inputs.duration }} bash -c '
-            # Quick Tunnel (بدون نیاز به token و domain)
             cloudflared tunnel --url http://localhost:8080 &
             TUNNEL_PID=$!
             sleep 8
-            # Chisel SOCKS5 Server
             chisel server --socks5 --port 8080 &
             CHISEL_PID=$!
             wait $TUNNEL_PID $CHISEL_PID
