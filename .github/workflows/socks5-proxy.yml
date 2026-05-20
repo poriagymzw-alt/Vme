@@ -1,0 +1,35 @@
+name: SOCKS5 Proxy via GitHub + Cloudflare (TryCloudflare)
+
+on:
+  workflow_dispatch:
+    inputs:
+      time-duration:
+        description: 'مدت زمان اجرا (مثلاً 6h)'
+        required: true
+        default: '6h'
+
+jobs:
+  socks5-proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Chisel (SOCKS5)
+        working-directory: ${{ runner.temp }}
+        env:
+          version: 1.7.6
+        run: |
+          aria2c -x 16 "https://github.com/jpillora/chisel/releases/download/v${version}/chisel_${version}_linux_amd64.gz"
+          gzip -d chisel_${version}_linux_amd64.gz
+          mv chisel_${version}_linux_amd64 /usr/local/bin/chisel
+          chmod +x /usr/local/bin/chisel
+
+      - name: Setup Cloudflare Tunnel (TryCloudflare - بدون دامنه!)
+        uses: AnimMouse/setup-cloudflared/tunnel@v2
+        with:
+          url: http://localhost:8080   # <-- همین یک خط کافیه!
+
+      - name: Run Chisel SOCKS5 Server
+        run: timeout "${{ github.event.inputs.time-duration }}" chisel server --socks5 || true
+
+      - name: Shutdown Tunnel + Log
+        if: always()
+        uses: AnimMouse/setup-cloudflared/shutdown@v2
