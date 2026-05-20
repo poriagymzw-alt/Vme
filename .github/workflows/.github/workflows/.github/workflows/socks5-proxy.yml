@@ -1,4 +1,4 @@
-name: GitHub SOCKS5 Proxy (Quick Tunnel - بدون Domain)
+name: SOCKS5 Proxy - Quick Cloudflare Tunnel (بدون Domain)
 
 on:
   workflow_dispatch:
@@ -15,9 +15,11 @@ jobs:
     steps:
       - name: Install cloudflared + Chisel
         run: |
+          # cloudflared
           curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared.deb
 
+          # Chisel (SOCKS5)
           wget https://github.com/jpillora/chisel/releases/download/v1.10.0/chisel_1.10.0_linux_amd64.deb
           sudo dpkg -i chisel_1.10.0_linux_amd64.deb
 
@@ -26,10 +28,21 @@ jobs:
           echo "🚀 شروع Quick Tunnel + Chisel SOCKS5..."
           
           timeout ${{ github.event.inputs.duration }} bash -c '
-            cloudflared tunnel --url http://localhost:8080 &
+            # Quick Tunnel (آدرس عمومی خودش چاپ می‌کنه)
+            cloudflared tunnel --url http://localhost:8080 > /tmp/tunnel.log 2>&1 &
             TUNNEL_PID=$!
-            sleep 8
+            
+            # صبر کوتاه تا تونل آماده بشه
+            sleep 10
+            
+            # آدرس تونل رو واضح چاپ کن
+            echo "=== آدرس تونل آماده ==="
+            grep -o "https://[^ ]*\.trycloudflare\.com" /tmp/tunnel.log || echo "آدرس در لاگ کامل پیدا نشد (اسکرول بالا رو چک کن)"
+            cat /tmp/tunnel.log | tail -20
+            
+            # Chisel SOCKS5 Server
             chisel server --socks5 --port 8080 &
             CHISEL_PID=$!
+            
             wait $TUNNEL_PID $CHISEL_PID
           ' || true
